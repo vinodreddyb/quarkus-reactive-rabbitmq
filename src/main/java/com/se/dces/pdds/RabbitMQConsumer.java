@@ -1,31 +1,33 @@
 package com.se.dces.pdds;
 
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.subscription.MultiEmitter;
+import io.smallrye.common.annotation.Blocking;
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
-
-import java.util.concurrent.CompletionStage;
+import org.eclipse.microprofile.reactive.messaging.Outgoing;
 
 @ApplicationScoped
 public class RabbitMQConsumer {
 
-    private final Multi<String> stream1;
-    private MultiEmitter<? super String> emitter1;
-    public RabbitMQConsumer() {
-        this.stream1 = Multi.createFrom().emitter(emitter -> this.emitter1 = emitter);
 
-    }
 
+
+
+    //Properties:
+    //content_type = text/plain   in rabbitmq ui while sending message
+    //=
     @Incoming("queue1")
-    public CompletionStage<Void> consumeFromQueue1(Message<String> message) {
-        emitter1.emit(message.getPayload());
-        return message.ack();
+    @Outgoing("quotes")
+    @Blocking
+    @RunOnVirtualThread
+    public String process(Message<String> quoteRequest) throws InterruptedException {
+        // simulate some hard working task
+        System.out.println("Received message: " + quoteRequest.getPayload());
+      //  Thread.sleep(200);
+        return quoteRequest.getPayload();
     }
 
-    public Multi<String> getStream1() {
-        return stream1;
-    }
+
 
 }
