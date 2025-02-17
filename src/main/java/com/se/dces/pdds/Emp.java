@@ -4,6 +4,7 @@ public class Emp {
     private String name;
     private String id;
     private boolean error;
+    private Long salary;
 
     public String getName() {
         return name;
@@ -35,5 +36,13 @@ public class Emp {
                 "name='" + name + '\'' +
                 ", id='" + id + '\'' +
                 '}';
+    }
+
+    public Long getSalary() {
+        return salary;
+    }
+
+    public void setSalary(Long salary) {
+        this.salary = salary;
     }
 }

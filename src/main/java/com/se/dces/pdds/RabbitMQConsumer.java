@@ -24,6 +24,11 @@ public class RabbitMQConsumer {
 
 
 
+    private final RedisService redisService;
+
+    public RabbitMQConsumer(RedisService redisService) {
+        this.redisService = redisService;
+    }
 
 
     //Properties:
@@ -62,7 +67,7 @@ public class RabbitMQConsumer {
     }*/
 
 
-    @Incoming("queue-stream")
+    //@Incoming("queue-stream")
     public Uni<Void> process(IncomingRabbitMQMessage<JsonObject> quoteRequest)  {
 
         return Uni.createFrom().item(quoteRequest)
@@ -85,6 +90,27 @@ public class RabbitMQConsumer {
                     return Uni.createFrom().voidItem();
                 });
 
+    }
+
+    @Incoming("queue-stream")
+    public Uni<Void> consume(IncomingRabbitMQMessage<JsonObject> message) {
+        if(checkRetry(message)) return Uni.createFrom().voidItem();
+        return processMessage(message)
+                .onFailure().recoverWithUni(ex -> handleFailure(message, ex));
+    }
+
+
+
+    private Uni<Void> processMessage(IncomingRabbitMQMessage<JsonObject> message) {
+        System.out.println("Received message: " + message.getPayload());
+        var payload = message.getPayload().mapTo(Emp.class);
+        return redisService.setValue(payload.getName(),payload.getSalary());
+    }
+
+    private Uni<Void> handleFailure(IncomingRabbitMQMessage<JsonObject> message, Throwable ex) {
+        System.err.println("Failed processing message: " + message + " | Error: " + ex.getMessage());
+        message.rejectMessage(ex,false);
+        return Uni.createFrom().voidItem();
     }
 
     private  boolean checkRetry(IncomingRabbitMQMessage<JsonObject> quoteRequest) {
